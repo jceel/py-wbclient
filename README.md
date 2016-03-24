@@ -1,2 +1,2 @@
 # py-wbclient
-Samba winbdind client for Python
+Samba winbind client for Python
