@@ -27,6 +27,11 @@
 
 from libc.stdint cimport *
 from posix.unistd cimport uid_t, gid_t, pid_t
+from posix.time cimport time_t
+
+
+cdef extern from "stdbool.h":
+    ctypedef int bool
 
 
 cdef extern from "pwd.h":
@@ -180,10 +185,10 @@ cdef extern from "wbclient.h":
         wbcNamedBlob *blobs
 
     enum wbcAuthUserLevel:
-		WBC_AUTH_USER_LEVEL_PLAIN
-		WBC_AUTH_USER_LEVEL_HASH
-		WBC_AUTH_USER_LEVEL_RESPONSE
-		WBC_AUTH_USER_LEVEL_PAC
+        WBC_AUTH_USER_LEVEL_PLAIN
+        WBC_AUTH_USER_LEVEL_HASH
+        WBC_AUTH_USER_LEVEL_RESPONSE
+        WBC_AUTH_USER_LEVEL_PAC
 
     enum wbcChangePasswordLevel:
         WBC_CHANGE_PASSWORD_LEVEL_PLAIN
@@ -342,7 +347,7 @@ cdef extern from "wbclient.h":
         const char *client_site_name
 
     void wbcFreeMemory(void*)
-    wbcContext *wbcCtxCreate(void)
+    wbcContext *wbcCtxCreate()
     void wbcCtxFree(wbcContext *ctx)
     const char* wbcSidTypeString(wbcSidType type)
     int wbcSidToStringBuf(const wbcDomainSid *sid, char *buf, int buflen)
@@ -351,10 +356,10 @@ cdef extern from "wbclient.h":
     wbcErr wbcGuidToString(const wbcGuid *guid, char **guid_string)
     wbcErr wbcStringToGuid(const char *guid_string, wbcGuid *guid)
     wbcErr wbcCtxPing(wbcContext *ctx)
-    wbcErr wbcPing(void)
+    wbcErr wbcPing()
     wbcErr wbcLibraryDetails(wbcLibraryDetails **details)
     wbcErr wbcCtxInterfaceDetails(wbcContext *ctx, wbcInterfaceDetails **details)
-    wbcErr wbcInterfaceDetails(wbcInterfaceDetails **details)
+    wbcErr wbcGetInterfaceDetails "wbcInterfaceDetails" (wbcInterfaceDetails **details)
     wbcErr wbcCtxLookupName(wbcContext *ctx, const char *dom_name, const char *name, wbcDomainSid *sid, wbcSidType *name_type)
     wbcErr wbcLookupName(const char *dom_name,
                  const char *name,
@@ -559,11 +564,11 @@ cdef extern from "wbclient.h":
 
     wbcErr wbcCtxSetpwent(wbcContext *ctx)
 
-    wbcErr wbcSetpwent(void)
+    wbcErr wbcSetpwent()
 
     wbcErr wbcCtxEndpwent(wbcContext *ctx)
 
-    wbcErr wbcEndpwent(void)
+    wbcErr wbcEndpwent()
 
     wbcErr wbcCtxGetpwent(wbcContext *ctx, passwd **pwd)
 
@@ -571,11 +576,11 @@ cdef extern from "wbclient.h":
 
     wbcErr wbcCtxSetgrent(wbcContext *ctx)
 
-    wbcErr wbcSetgrent(void)
+    wbcErr wbcSetgrent()
 
     wbcErr wbcCtxEndgrent(wbcContext *ctx)
 
-    wbcErr wbcEndgrent(void)
+    wbcErr wbcEndgrent()
 
     wbcErr wbcCtxGetgrent(wbcContext *ctx, group **grp)
 
@@ -598,7 +603,7 @@ cdef extern from "wbclient.h":
                 const char *domain,
                 wbcDomainInfo **dinfo)
 
-    wbcErr wbcDomainInfo(const char *domain,
+    wbcErr wbcGetDomainInfo "wbcDomainInfo" (const char *domain,
                  wbcDomainInfo **dinfo)
 
     wbcErr wbcCtxDcInfo(wbcContext *ctx,
@@ -709,16 +714,16 @@ cdef extern from "wbclient.h":
                      const char *old_password,
                      const char *new_password)
 
-    wbcErr wbcCtxChangeUserPasswordEx(wbcContext *ctx,
-                      const wbcChangePasswordParams *params,
-                      wbcAuthErrorInfo **error,
-                      wbcPasswordChangeRejectReason *reject_reason,
-                      wbcUserPasswordPolicyInfo **policy)
+    #wbcErr wbcCtxChangeUserPasswordEx(wbcContext *ctx,
+    #                  const wbcChangePasswordParams *params,
+    #                  wbcAuthErrorInfo **error,
+    #                  wbcPasswordChangeRejectReason *reject_reason,
+    #                  wbcUserPasswordPolicyInfo **policy)
 
-    wbcErr wbcChangeUserPasswordEx(const wbcChangePasswordParams *params,
-                       wbcAuthErrorInfo **error,
-                       wbcPasswordChangeRejectReason *reject_reason,
-                       wbcUserPasswordPolicyInfo **policy)
+    #wbcErr wbcChangeUserPasswordEx(const wbcChangePasswordParams *params,
+    #                   wbcAuthErrorInfo **error,
+    #                   wbcPasswordChangeRejectReason *reject_reason,
+    #                   wbcUserPasswordPolicyInfo **policy)
 
     wbcErr wbcCtxCredentialCache(wbcContext *ctx,
                      wbcCredentialCacheParams *params,

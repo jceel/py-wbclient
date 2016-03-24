@@ -1,3 +1,4 @@
+# cython: c_string_type=unicode, c_string_encoding=ascii
 #
 # Copyright 2016 iXsystems, Inc.
 # All rights reserved
@@ -33,5 +34,55 @@ from libc.string cimport memcpy
 cimport defs
 
 
-cdef class WinbindUser(object):
-    pass
+cdef class Context(object):
+    cdef defs.wbcContext *context
+
+    def __init__(self):
+        self.context = defs.wbcCtxCreate()
+
+    property interface:
+        def __get__(self):
+            cdef InterfaceDetails ret
+
+            ret = InterfaceDetails.__new__(InterfaceDetails)
+            defs.wbcGetInterfaceDetails(&ret.details)
+            return ret
+
+    def list_users(self, domain_name):
+        cdef const char **users
+        cdef uint32_t num_users
+
+        defs.wbcListUsers(domain_name, &num_users, &users)
+        for i in range(0, num_users):
+            yield users[i]
+
+
+cdef class InterfaceDetails(object):
+    cdef defs.wbcInterfaceDetails *details
+
+    def __dealloc__(self):
+        pass
+
+    property netbios_name:
+        def __get__(self):
+            return self.details.netbios_name
+
+    property netbios_domain:
+        def __get__(self):
+            return self.details.netbios_domain
+
+    property dns_domain:
+        def __get__(self):
+            return self.details.dns_domain
+
+
+cdef class DomainInfo(object):
+    cdef defs.wbcDomainInfo dinfo
+
+    property short_name:
+        def __get__(self):
+            return self.dinfo.short_name
+
+    property dns_name:
+        def __get__(self):
+            return self.dinfo.dns_name
