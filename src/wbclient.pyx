@@ -26,12 +26,33 @@
 #
 #####################################################################
 
-
 import enum
 import cython
+import pwd
+import grp
 from libc.stdint cimport *
-from libc.string cimport memcpy
 cimport defs
+
+
+class WinbindErrorCode(enum.IntEnum):
+    SUCCESS = defs.WBC_ERR_SUCCESS
+    NOT_IMPLEMENTED = defs.WBC_ERR_NOT_IMPLEMENTED
+    UNKNOWN_FAILURE = defs.WBC_ERR_UNKNOWN_FAILURE
+    NO_MEMORY = defs.WBC_ERR_NO_MEMORY
+    INVALID_SID = defs.WBC_ERR_INVALID_SID
+    INVALID_PARAM = defs.WBC_ERR_INVALID_PARAM
+    WINBIND_NOT_AVAILABLE = defs.WBC_ERR_WINBIND_NOT_AVAILABLE
+    DOMAIN_NOT_FOUND = defs.WBC_ERR_DOMAIN_NOT_FOUND
+    INVALID_RESPONSE = defs.WBC_ERR_INVALID_RESPONSE
+    NSS_ERROR = defs.WBC_ERR_NSS_ERROR
+    AUTH_ERROR = defs.WBC_ERR_AUTH_ERROR
+    UNKNOWN_USER = defs.WBC_ERR_UNKNOWN_USER
+    UNKNOWN_GROUP = defs.WBC_ERR_UNKNOWN_GROUP
+    PWD_CHANGE_FAILED = defs.WBC_ERR_PWD_CHANGE_FAILED
+
+
+class WinbindException(Exception):
+    pass
 
 
 cdef class Context(object):
@@ -39,6 +60,9 @@ cdef class Context(object):
 
     def __init__(self):
         self.context = defs.wbcCtxCreate()
+
+    def __dealloc__(self):
+        defs.wbcCtxFree(self.context)
 
     property interface:
         def __get__(self):
@@ -55,6 +79,58 @@ cdef class Context(object):
         defs.wbcListUsers(domain_name, &num_users, &users)
         for i in range(0, num_users):
             yield users[i]
+
+        defs.wbcFreeMemory(users)
+
+    def list_groups(self, domain_name):
+        cdef const char **groups
+        cdef uint32_t num_groups
+
+        defs.wbcListGroups(domain_name, &num_groups, &groups)
+        for i in range(0, num_groups):
+            yield groups[i]
+
+        defs.wbcFreeMemory(groups)
+
+    def query_users(self, domain_name):
+        cdef User user
+        cdef SID sid
+        cdef defs.passwd *pwdent
+        cdef defs.wbcErr err
+
+        defs.wbcCtxSetpwent(self.context)
+        while True:
+            err = defs.wbcCtxGetpwent(self.context, &pwdent)
+            if err != defs.WBC_ERR_SUCCESS:
+                break
+
+            user = User.__new__(User)
+            sid = SID.__new__(SID)
+            defs.wbcUidToSid(pwdent.pw_uid, &sid.sid)
+            user.pwdent = pwdent
+            user.context = self
+            user.sid = sid
+            yield user
+
+    def query_groups(self, domain_name):
+        cdef Group group
+        cdef SID sid
+        cdef defs.group *grent
+        cdef defs.wbcErr err
+
+        defs.wbcCtxSetgrent(self.context)
+        while True:
+            err = defs.wbcCtxGetgrent(self.context, &grent)
+            if err != defs.WBC_ERR_SUCCESS:
+                break
+
+            group = Group.__new__(Group)
+            sid = SID.__new__(SID)
+            defs.wbcGidToSid(grent.gr_gid, &sid.sid)
+            group.grent = grent
+            group.context = self
+            group.sid = sid
+            yield group
 
 
 cdef class InterfaceDetails(object):
@@ -86,3 +162,79 @@ cdef class DomainInfo(object):
     property dns_name:
         def __get__(self):
             return self.dinfo.dns_name
+
+
+cdef class SID(object):
+    cdef defs.wbcDomainSid sid
+
+    def __str__(self):
+        cdef char sid_str[defs.WBC_SID_STRING_BUFLEN]
+
+        defs.wbcSidToStringBuf(&self.sid, sid_str, defs.WBC_SID_STRING_BUFLEN)
+        return sid_str
+
+    def __repr__(self):
+        return str(self)
+
+
+cdef class User(object):
+    cdef readonly Context context
+    cdef readonly SID sid
+    cdef defs.passwd *pwdent
+
+    def __dealloc__(self):
+        defs.wbcFreeMemory(self.pwdent)
+
+    def __str__(self):
+        return "<wbclient.User name '{0}' sid '{1}'>".format(self.name, str(self.sid))
+
+    def __repr__(self):
+        return str(self)
+
+    property name:
+        def __get__(self):
+            return self.pwdent.pw_name
+
+    property passwd:
+        def __get__(self):
+            return pwd.struct_passwd((
+                self.pwdent.pw_name,
+                self.pwdent.pw_passwd,
+                self.pwdent.pw_uid,
+                self.pwdent.pw_gid,
+                self.pwdent.pw_gecos,
+                self.pwdent.pw_dir,
+                self.pwdent.pw_shell
+            ))
+
+    property groups:
+        def __get__(self):
+            pass
+
+
+cdef class Group(object):
+    cdef readonly Context context
+    cdef readonly SID sid
+    cdef defs.group *grent
+
+    def __dealloc__(self):
+        defs.wbcFreeMemory(self.grent)
+
+    def __str__(self):
+        return "<wbclient.Group name '{0}' sid '{1}'>".format(self.name, str(self.sid))
+
+    def __repr__(self):
+        return str(self)
+
+    property name:
+        def __get__(self):
+            return self.grent.gr_name
+
+    property group:
+        def __get__(self):
+            return grp.struct_group((
+                self.grent.gr_name,
+                self.grent.gr_passwd,
+                self.grent.gr_gid,
+                []
+            ))

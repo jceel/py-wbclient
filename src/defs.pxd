@@ -63,7 +63,7 @@ cdef extern from "wbclient.h":
 
     ctypedef enum wbcErr:
         WBC_ERR_SUCCESS
-        WBC_ERR_NOT_IMPLEMENTE
+        WBC_ERR_NOT_IMPLEMENTED
         WBC_ERR_UNKNOWN_FAILURE
         WBC_ERR_NO_MEMORY
         WBC_ERR_INVALID_SID
@@ -73,9 +73,12 @@ cdef extern from "wbclient.h":
         WBC_ERR_INVALID_RESPONSE
         WBC_ERR_NSS_ERROR
         WBC_ERR_AUTH_ERROR
-        WBC_ERR_UNKNOWN_USE
-        WBC_ERR_UNKNOWN_GROUP,
+        WBC_ERR_UNKNOWN_USER
+        WBC_ERR_UNKNOWN_GROUP
         WBC_ERR_PWD_CHANGE_FAILED
+
+    enum:
+        WBC_SID_STRING_BUFLEN
 
     const char *wbcErrorString(wbcErr error)
 
