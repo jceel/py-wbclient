@@ -27,7 +27,6 @@
 #####################################################################
 
 import enum
-import cython
 import pwd
 import grp
 from libc.stdint cimport *
@@ -52,7 +51,14 @@ class WinbindErrorCode(enum.IntEnum):
 
 
 class WinbindException(Exception):
-    pass
+    def __init__(self, code):
+        if not (isinstance(code, WinbindErrorCode)):
+            raise ValueError('code must be instance of WinbindErrorCode')
+
+        self.code = code
+
+    def __str__(self):
+        return self.code.name
 
 
 cdef class Context(object):
@@ -71,6 +77,9 @@ cdef class Context(object):
             ret = InterfaceDetails.__new__(InterfaceDetails)
             defs.wbcGetInterfaceDetails(&ret.details)
             return ret
+
+    def ping_dc(self):
+        pass
 
     def list_users(self, domain_name):
         cdef const char **users
@@ -209,7 +218,26 @@ cdef class User(object):
 
     property groups:
         def __get__(self):
-            pass
+            cdef SID sid
+            cdef defs.wbcErr err
+            cdef uint32_t num_sids
+            cdef defs.wbcDomainSid *sids
+
+            err = defs.wbcCtxLookupUserSids(
+                self.context.context,
+                &self.sid.sid,
+                True,
+                &num_sids,
+                &sids
+            )
+
+            if err != defs.WBC_ERR_SUCCESS:
+                raise WinbindException(WinbindErrorCode(<int>err))
+
+            for i in range(0, num_sids):
+                sid = SID.__new__(SID)
+                sid.sid = sids[i]
+                yield sid
 
 
 cdef class Group(object):
