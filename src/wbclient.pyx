@@ -51,14 +51,19 @@ class WinbindErrorCode(enum.IntEnum):
 
 
 class WinbindException(Exception):
-    def __init__(self, code):
-        if not (isinstance(code, WinbindErrorCode)):
+    def __init__(self, code, message=None):
+        if not isinstance(code, WinbindErrorCode):
             raise ValueError('code must be instance of WinbindErrorCode')
 
+        self.message = message
         self.code = code
 
     def __str__(self):
         return self.code.name
+
+
+class AuthException(WinbindException):
+    pass
 
 
 cdef class Context(object):
@@ -78,8 +83,30 @@ cdef class Context(object):
             defs.wbcGetInterfaceDetails(&ret.details)
             return ret
 
-    def ping_dc(self):
-        pass
+    def ping_dc(self, domain_name):
+        cdef defs.wbcErr err
+        cdef defs.wbcAuthErrorInfo *error_info = NULL
+        cdef char *dcname = NULL
+
+        err = defs.wbcCtxPingDc2(self.context, domain_name, &error_info, &dcname)
+        if err == defs.WBC_ERR_SUCCESS:
+            dc_name = dcname
+            defs.wbcFreeMemory(dcname)
+            return dc_name
+
+        err = AuthException(WinbindErrorCode(<int>err))
+        if error_info != NULL:
+            err.message = error_info.display_string
+            err.nt_string = error_info.nt_string
+            err.nt_status = error_info.nt_status
+            err.pam_error = error_info.pam_error
+            defs.wbcFreeMemory(error_info)
+
+        if dcname != NULL:
+            err.dc_name = dcname
+            defs.wbcFreeMemory(dcname)
+
+        raise err
 
     def list_users(self, domain_name):
         cdef const char **users
