@@ -26,7 +26,7 @@
 #####################################################################
 
 from libc.stdint cimport *
-from posix.unistd cimport uid_t, gid_t, pid_t
+from posix.unistd cimport uid_t, gid_t
 from posix.time cimport time_t
 
 

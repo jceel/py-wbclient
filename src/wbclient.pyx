@@ -30,6 +30,7 @@ import enum
 import pwd
 import grp
 from libc.stdint cimport *
+from posix.unistd cimport uid_t, gid_t
 cimport defs
 
 
@@ -82,6 +83,30 @@ cdef class Context(object):
             ret = InterfaceDetails.__new__(InterfaceDetails)
             defs.wbcGetInterfaceDetails(&ret.details)
             return ret
+
+    cdef marshal_user(self, defs.passwd *pwdent):
+        cdef User user
+        cdef SID sid
+
+        user = User.__new__(User)
+        sid = SID.__new__(SID)
+        defs.wbcUidToSid(pwdent.pw_uid, &sid.sid)
+        user.pwdent = pwdent
+        user.context = self
+        user.sid = sid
+        return user
+
+    cdef marshal_group(self, defs.group *grent):
+        cdef Group group
+        cdef SID sid
+
+        group = Group.__new__(Group)
+        sid = SID.__new__(SID)
+        defs.wbcGidToSid(grent.gr_gid, &sid.sid)
+        group.grent = grent
+        group.context = self
+        group.sid = sid
+        return group
 
     def ping_dc(self, domain_name):
         cdef defs.wbcErr err
@@ -140,13 +165,7 @@ cdef class Context(object):
             if err != defs.WBC_ERR_SUCCESS:
                 break
 
-            user = User.__new__(User)
-            sid = SID.__new__(SID)
-            defs.wbcUidToSid(pwdent.pw_uid, &sid.sid)
-            user.pwdent = pwdent
-            user.context = self
-            user.sid = sid
-            yield user
+            yield self.marshal_user(pwdent)
 
     def query_groups(self, domain_name):
         cdef Group group
@@ -160,13 +179,55 @@ cdef class Context(object):
             if err != defs.WBC_ERR_SUCCESS:
                 break
 
-            group = Group.__new__(Group)
-            sid = SID.__new__(SID)
-            defs.wbcGidToSid(grent.gr_gid, &sid.sid)
-            group.grent = grent
-            group.context = self
-            group.sid = sid
-            yield group
+
+            yield self.marshal_group(grent)
+
+    def get_user(self, uid=None, sid=None, name=None):
+        cdef User user
+        cdef SID usid
+        cdef defs.passwd *pwent
+        cdef defs.wbcErr err
+
+        if uid:
+            err = defs.wbcCtxGetpwuid(self.context, <uid_t>uid, &pwent)
+
+        if sid:
+            usid = <SID>sid
+            err = defs.wbcCtxGetpwsid(self.context, &usid.sid, &pwent)
+
+        if name:
+            err = defs.wbcCtxGetpwnam(self.context, name, &pwent)
+
+        if err != defs.WBC_ERR_SUCCESS:
+            raise WinbindException(WinbindErrorCode(<int>err))
+
+        return self.marshal_user(pwent)
+
+    def get_group(self, gid=None, sid=None, name=None):
+        cdef User user
+        cdef SID gsid
+        cdef gid_t ggid
+        cdef defs.group *grent
+        cdef defs.wbcErr err
+
+        if gid:
+            err = defs.wbcCtxGetgrgid(self.context, <uid_t>gid, &grent)
+
+        if sid:
+            gsid = <SID>sid
+            err = defs.wbcCtxSidToGid(self.context, &gsid.sid, &ggid)
+            if err != defs.WBC_ERR_SUCCESS:
+                raise WinbindException(WinbindErrorCode(<int>err))
+
+            err = defs.wbcCtxGetgrgid(self.context, ggid, &grent)
+
+        if name:
+            err = defs.wbcCtxGetgrnam(self.context, name, &grent)
+
+        if err != defs.WBC_ERR_SUCCESS:
+            raise WinbindException(WinbindErrorCode(<int>err))
+
+        return self.marshal_group(grent)
 
 
 cdef class InterfaceDetails(object):
