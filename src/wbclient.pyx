@@ -82,6 +82,10 @@ cdef class Context(object):
 
             ret = InterfaceDetails.__new__(InterfaceDetails)
             defs.wbcGetInterfaceDetails(&ret.details)
+
+            if ret.details == NULL:
+                return None
+
             return ret
 
     cdef marshal_user(self, defs.passwd *pwdent):
