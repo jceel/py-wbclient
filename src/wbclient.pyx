@@ -127,19 +127,19 @@ cdef class Context(object):
             defs.wbcFreeMemory(dcname)
             return dc_name
 
-        err = AuthException(WinbindErrorCode(err))
+        exc = AuthException(WinbindErrorCode(err))
         if error_info != NULL:
-            err.message = error_info.display_string
-            err.nt_string = error_info.nt_string
-            err.nt_status = error_info.nt_status
-            err.pam_error = error_info.pam_error
+            exc.message = error_info.display_string
+            exc.nt_string = error_info.nt_string
+            exc.nt_status = error_info.nt_status
+            exc.pam_error = error_info.pam_error
             defs.wbcFreeMemory(error_info)
 
         if dcname != NULL:
-            err.dc_name = dcname
+            exc.dc_name = dcname
             defs.wbcFreeMemory(dcname)
 
-        raise err
+        raise exc
 
     def list_users(self, domain_name):
         cdef const char **users
