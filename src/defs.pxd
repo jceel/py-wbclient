@@ -360,7 +360,7 @@ cdef extern from "wbclient.h" nogil:
     wbcErr wbcStringToGuid(const char *guid_string, wbcGuid *guid)
     wbcErr wbcCtxPing(wbcContext *ctx)
     wbcErr wbcPing()
-    wbcErr wbcLibraryDetails(wbcLibraryDetails **details)
+    wbcErr wbcGetLibraryDetails "wbcLibraryDetails" (wbcLibraryDetails **details)
     wbcErr wbcCtxInterfaceDetails(wbcContext *ctx, wbcInterfaceDetails **details)
     wbcErr wbcGetInterfaceDetails "wbcInterfaceDetails" (wbcInterfaceDetails **details)
     wbcErr wbcCtxLookupName(wbcContext *ctx, const char *dom_name, const char *name, wbcDomainSid *sid, wbcSidType *name_type)
