@@ -113,17 +113,20 @@ cdef class Context(object):
         return group
 
     def ping_dc(self, domain_name):
-        cdef defs.wbcErr err
+        cdef const char *c_domain_name = domain_name
         cdef defs.wbcAuthErrorInfo *error_info = NULL
         cdef char *dcname = NULL
+        cdef int err
 
-        err = defs.wbcCtxPingDc2(self.context, domain_name, &error_info, &dcname)
+        with nogil:
+            err = defs.wbcCtxPingDc2(self.context, c_domain_name, &error_info, &dcname)
+
         if err == defs.WBC_ERR_SUCCESS:
             dc_name = dcname
             defs.wbcFreeMemory(dcname)
             return dc_name
 
-        err = AuthException(WinbindErrorCode(<int>err))
+        err = AuthException(WinbindErrorCode(err))
         if error_info != NULL:
             err.message = error_info.display_string
             err.nt_string = error_info.nt_string
@@ -161,7 +164,6 @@ cdef class Context(object):
         cdef User user
         cdef SID sid
         cdef defs.passwd *pwdent
-        cdef defs.wbcErr err
 
         defs.wbcCtxSetpwent(self.context)
         while True:
@@ -175,7 +177,6 @@ cdef class Context(object):
         cdef Group group
         cdef SID sid
         cdef defs.group *grent
-        cdef defs.wbcErr err
 
         defs.wbcCtxSetgrent(self.context)
         while True:
@@ -190,7 +191,6 @@ cdef class Context(object):
         cdef User user
         cdef SID usid
         cdef defs.passwd *pwent
-        cdef defs.wbcErr err
 
         if uid:
             err = defs.wbcCtxGetpwuid(self.context, <uid_t>uid, &pwent)
@@ -203,7 +203,7 @@ cdef class Context(object):
             err = defs.wbcCtxGetpwnam(self.context, name, &pwent)
 
         if err != defs.WBC_ERR_SUCCESS:
-            raise WinbindException(WinbindErrorCode(<int>err))
+            raise WinbindException(WinbindErrorCode(err))
 
         return self.marshal_user(pwent)
 
@@ -212,7 +212,6 @@ cdef class Context(object):
         cdef SID gsid
         cdef gid_t ggid
         cdef defs.group *grent
-        cdef defs.wbcErr err
 
         if gid:
             err = defs.wbcCtxGetgrgid(self.context, <uid_t>gid, &grent)
@@ -221,7 +220,7 @@ cdef class Context(object):
             gsid = <SID>sid
             err = defs.wbcCtxSidToGid(self.context, &gsid.sid, &ggid)
             if err != defs.WBC_ERR_SUCCESS:
-                raise WinbindException(WinbindErrorCode(<int>err))
+                raise WinbindException(WinbindErrorCode(err))
 
             err = defs.wbcCtxGetgrgid(self.context, ggid, &grent)
 
@@ -229,7 +228,7 @@ cdef class Context(object):
             err = defs.wbcCtxGetgrnam(self.context, name, &grent)
 
         if err != defs.WBC_ERR_SUCCESS:
-            raise WinbindException(WinbindErrorCode(<int>err))
+            raise WinbindException(WinbindErrorCode(err))
 
         return self.marshal_group(grent)
 
@@ -311,7 +310,6 @@ cdef class User(object):
     property groups:
         def __get__(self):
             cdef SID sid
-            cdef defs.wbcErr err
             cdef uint32_t num_sids
             cdef defs.wbcDomainSid *sids
 
@@ -324,7 +322,7 @@ cdef class User(object):
             )
 
             if err != defs.WBC_ERR_SUCCESS:
-                raise WinbindException(WinbindErrorCode(<int>err))
+                raise WinbindException(WinbindErrorCode(err))
 
             for i in range(0, num_sids):
                 sid = SID.__new__(SID)

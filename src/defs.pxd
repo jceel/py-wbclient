@@ -57,7 +57,7 @@ cdef extern from "grp.h":
         char    **gr_mem
 
 
-cdef extern from "wbclient.h":
+cdef extern from "wbclient.h" nogil:
     cdef struct wbcContext:
         pass
 
