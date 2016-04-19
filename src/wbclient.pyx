@@ -81,7 +81,8 @@ cdef class Context(object):
             cdef InterfaceDetails ret
 
             ret = InterfaceDetails.__new__(InterfaceDetails)
-            defs.wbcGetInterfaceDetails(&ret.details)
+            with nogil:
+                defs.wbcGetInterfaceDetails(&ret.details)
 
             if ret.details == NULL:
                 return None
@@ -164,10 +165,13 @@ cdef class Context(object):
         cdef User user
         cdef SID sid
         cdef defs.passwd *pwdent
+        cdef int err
 
         defs.wbcCtxSetpwent(self.context)
         while True:
-            err = defs.wbcCtxGetpwent(self.context, &pwdent)
+            with nogil:
+                err = defs.wbcCtxGetpwent(self.context, &pwdent)
+
             if err != defs.WBC_ERR_SUCCESS:
                 break
 
@@ -191,16 +195,22 @@ cdef class Context(object):
         cdef User user
         cdef SID usid
         cdef defs.passwd *pwent
+        cdef int err
+        cdef uid_t c_uid = <uid_t>uid
+        cdef const char *c_name = name
 
         if uid:
-            err = defs.wbcCtxGetpwuid(self.context, <uid_t>uid, &pwent)
+            with nogil:
+                err = defs.wbcCtxGetpwuid(self.context, c_uid, &pwent)
 
         if sid:
             usid = <SID>sid
-            err = defs.wbcCtxGetpwsid(self.context, &usid.sid, &pwent)
+            with nogil:
+                err = defs.wbcCtxGetpwsid(self.context, &usid.sid, &pwent)
 
         if name:
-            err = defs.wbcCtxGetpwnam(self.context, name, &pwent)
+            with nogil:
+                err = defs.wbcCtxGetpwnam(self.context, c_name, &pwent)
 
         if err != defs.WBC_ERR_SUCCESS:
             raise WinbindException(WinbindErrorCode(err))
@@ -212,20 +222,28 @@ cdef class Context(object):
         cdef SID gsid
         cdef gid_t ggid
         cdef defs.group *grent
+        cdef uid_t c_gid = <uid_t>gid
+        cdef const char *c_name = name
+        cdef int err
 
         if gid:
-            err = defs.wbcCtxGetgrgid(self.context, <uid_t>gid, &grent)
+            with nogil:
+                err = defs.wbcCtxGetgrgid(self.context, c_gid, &grent)
 
         if sid:
             gsid = <SID>sid
-            err = defs.wbcCtxSidToGid(self.context, &gsid.sid, &ggid)
+            with nogil:
+                err = defs.wbcCtxSidToGid(self.context, &gsid.sid, &ggid)
+
             if err != defs.WBC_ERR_SUCCESS:
                 raise WinbindException(WinbindErrorCode(err))
 
-            err = defs.wbcCtxGetgrgid(self.context, ggid, &grent)
+            with nogil:
+                err = defs.wbcCtxGetgrgid(self.context, ggid, &grent)
 
         if name:
-            err = defs.wbcCtxGetgrnam(self.context, name, &grent)
+            with nogil:
+                err = defs.wbcCtxGetgrnam(self.context, c_name, &grent)
 
         if err != defs.WBC_ERR_SUCCESS:
             raise WinbindException(WinbindErrorCode(err))
@@ -312,14 +330,16 @@ cdef class User(object):
             cdef SID sid
             cdef uint32_t num_sids
             cdef defs.wbcDomainSid *sids
+            cdef int err
 
-            err = defs.wbcCtxLookupUserSids(
-                self.context.context,
-                &self.sid.sid,
-                True,
-                &num_sids,
-                &sids
-            )
+            with nogil:
+                err = defs.wbcCtxLookupUserSids(
+                    self.context.context,
+                    &self.sid.sid,
+                    True,
+                    &num_sids,
+                    &sids
+                )
 
             if err != defs.WBC_ERR_SUCCESS:
                 raise WinbindException(WinbindErrorCode(err))
