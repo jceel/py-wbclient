@@ -167,7 +167,9 @@ cdef class Context(object):
         cdef defs.passwd *pwdent
         cdef int err
 
-        defs.wbcCtxSetpwent(self.context)
+        with nogil:
+            defs.wbcCtxSetpwent(self.context)
+
         while True:
             with nogil:
                 err = defs.wbcCtxGetpwent(self.context, &pwdent)
@@ -182,7 +184,9 @@ cdef class Context(object):
         cdef SID sid
         cdef defs.group *grent
 
-        defs.wbcCtxSetgrent(self.context)
+        with nogil:
+            defs.wbcCtxSetgrent(self.context)
+
         while True:
             err = defs.wbcCtxGetgrent(self.context, &grent)
             if err != defs.WBC_ERR_SUCCESS:
@@ -196,10 +200,11 @@ cdef class Context(object):
         cdef SID usid
         cdef defs.passwd *pwent
         cdef int err
-        cdef uid_t c_uid = <uid_t>uid
+        cdef uid_t c_uid
         cdef const char *c_name = name
 
         if uid:
+            uid = <uid_t>uid
             with nogil:
                 err = defs.wbcCtxGetpwuid(self.context, c_uid, &pwent)
 
@@ -222,11 +227,12 @@ cdef class Context(object):
         cdef SID gsid
         cdef gid_t ggid
         cdef defs.group *grent
-        cdef uid_t c_gid = <uid_t>gid
+        cdef uid_t c_gid
         cdef const char *c_name = name
         cdef int err
 
         if gid:
+            gid = <uid_t>gid
             with nogil:
                 err = defs.wbcCtxGetgrgid(self.context, c_gid, &grent)
 
