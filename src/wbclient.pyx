@@ -201,10 +201,10 @@ cdef class Context(object):
         cdef defs.passwd *pwent
         cdef int err
         cdef uid_t c_uid
-        cdef const char *c_name = name
+        cdef const char *c_name = name or <const char *>NULL
 
         if uid:
-            uid = <uid_t>uid
+            c_uid = <uid_t><int>uid
             with nogil:
                 err = defs.wbcCtxGetpwuid(self.context, c_uid, &pwent)
 
@@ -228,11 +228,11 @@ cdef class Context(object):
         cdef gid_t ggid
         cdef defs.group *grent
         cdef uid_t c_gid
-        cdef const char *c_name = name
+        cdef const char *c_name = name or <const char *>NULL
         cdef int err
 
         if gid:
-            gid = <uid_t>gid
+            gid = <uid_t><int>gid
             with nogil:
                 err = defs.wbcCtxGetgrgid(self.context, c_gid, &grent)
 
