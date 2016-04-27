@@ -232,7 +232,7 @@ cdef class Context(object):
         cdef int err
 
         if gid:
-            gid = <uid_t><int>gid
+            c_gid = <uid_t><int>gid
             with nogil:
                 err = defs.wbcCtxGetgrgid(self.context, c_gid, &grent)
 
