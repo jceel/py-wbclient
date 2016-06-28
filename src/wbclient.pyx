@@ -90,19 +90,18 @@ cdef class Context(object):
             return ret
 
     def get_domain_info(self, domain):
-        def __get__(self):
-            cdef char *c_domain
-            cdef DomainInfo ret
+        cdef char *c_domain
+        cdef DomainInfo ret
 
-            c_domain = domain
-            ret = DomainInfo.__new__(DomainInfo)
-            with nogil:
-                defs.wbcGetDomainInfo(c_domain, &ret.dinfo)
+        c_domain = domain
+        ret = DomainInfo.__new__(DomainInfo)
+        with nogil:
+            defs.wbcGetDomainInfo(c_domain, &ret.dinfo)
 
-            if ret.dinfo == NULL:
-                return None
+        if ret.dinfo == NULL:
+            return None
 
-            return ret
+        return ret
 
     cdef marshal_user(self, defs.passwd *pwdent):
         cdef User user
