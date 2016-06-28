@@ -89,6 +89,19 @@ cdef class Context(object):
 
             return ret
 
+    property domain_info:
+        def __get__(self):
+            cdef DomainInfo ret
+
+            ret = DomainInfo.__new__(DomainInfo)
+            with nogil:
+                defs.wbcGetDomainInfo(&ret.dinfo)
+
+            if ret.dinfo == NULL:
+                return None
+
+            return ret
+
     cdef marshal_user(self, defs.passwd *pwdent):
         cdef User user
         cdef SID sid
@@ -277,7 +290,7 @@ cdef class InterfaceDetails(object):
 
 
 cdef class DomainInfo(object):
-    cdef defs.wbcDomainInfo dinfo
+    cdef defs.wbcDomainInfo *dinfo
 
     property short_name:
         def __get__(self):
