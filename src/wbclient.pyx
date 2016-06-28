@@ -287,6 +287,14 @@ cdef class DomainInfo(object):
         def __get__(self):
             return self.dinfo.dns_name
 
+    property sid:
+        def __get__(self):
+            cdef SID sid
+
+            sid = SID.__new__(SID)
+            sid.sid = self.dinfo.sid
+            return sid
+
 
 cdef class SID(object):
     cdef defs.wbcDomainSid sid
