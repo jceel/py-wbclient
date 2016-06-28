@@ -314,6 +314,9 @@ cdef class DomainInfo(object):
 cdef class SID(object):
     cdef defs.wbcDomainSid sid
 
+    def __init__(self, sidstr):
+        defs.wbcStringToSid(sidstr, &self.sid)
+
     def __str__(self):
         cdef char sid_str[defs.WBC_SID_STRING_BUFLEN]
 
