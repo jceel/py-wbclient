@@ -326,7 +326,7 @@ cdef class SID(object):
         return str(self)
 
     def __bytes__(self):
-        return <bytes>self.sid[:sizeof(defs.wbcDomainSid)]
+        return <bytes>(<void *>self.sid[:sizeof(defs.wbcDomainSid)])
 
 
 cdef class User(object):
