@@ -325,6 +325,9 @@ cdef class SID(object):
     def __repr__(self):
         return str(self)
 
+    def __bytes__(self):
+        return <bytes>self.sid[:sizeof(defs.wbcDomainSid)]
+
 
 cdef class User(object):
     cdef readonly Context context
