@@ -329,7 +329,7 @@ cdef class SID(object):
         cdef char *binary
 
         binary = <char *>&self.sid
-        return <bytes>binary[:sizeof(defs.wbcDomainSid)]
+        return <bytes>binary[:8 + self.sid.num_auths * 4]
 
 
 cdef class User(object):
