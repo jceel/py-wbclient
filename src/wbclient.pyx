@@ -218,7 +218,8 @@ cdef class Context(object):
         cdef const char *c_name = <const char *>NULL
 
         if name:
-            c_name = name.encode('utf-8')
+            name = name.encode('utf-8')
+            c_name = name
 
         if uid:
             c_uid = <uid_t><int>uid
@@ -249,7 +250,8 @@ cdef class Context(object):
         cdef int err
 
         if name:
-            c_name = name.encode('utf-8')
+            name = name.encode('utf-8')
+            c_name = name
 
         if gid:
             c_gid = <uid_t><int>gid
@@ -359,13 +361,13 @@ cdef class User(object):
     property passwd:
         def __get__(self):
             return pwd.struct_passwd((
-                self.pwdent.pw_name,
+                (<bytes>self.pwdent.pw_name).decode('utf-8'),
                 self.pwdent.pw_passwd,
                 self.pwdent.pw_uid,
                 self.pwdent.pw_gid,
-                self.pwdent.pw_gecos,
-                self.pwdent.pw_dir,
-                self.pwdent.pw_shell
+                (<bytes>self.pwdent.pw_gecos).decode('utf-8'),
+                (<bytes>self.pwdent.pw_dir).decode('utf-8'),
+                (<bytes>self.pwdent.pw_shell).decode('utf-8')
             ))
 
     property groups:
@@ -414,7 +416,7 @@ cdef class Group(object):
     property group:
         def __get__(self):
             return grp.struct_group((
-                self.grent.gr_name,
+                (<bytes>self.grent.gr_name).decode('utf-8'),
                 self.grent.gr_passwd,
                 self.grent.gr_gid,
                 []
