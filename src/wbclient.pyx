@@ -1,4 +1,4 @@
-# cython: c_string_type=unicode, c_string_encoding=ascii
+# cython: c_string_type=unicode, c_string_encoding=utf-8
 #
 # Copyright 2016 iXsystems, Inc.
 # All rights reserved
