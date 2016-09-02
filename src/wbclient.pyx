@@ -1,4 +1,4 @@
-# cython: c_string_type=unicode, c_string_encoding=utf-8
+# cython: c_string_type=unicode, c_string_encoding=ascii
 #
 # Copyright 2016 iXsystems, Inc.
 # All rights reserved
@@ -215,7 +215,10 @@ cdef class Context(object):
         cdef defs.passwd *pwent
         cdef int err
         cdef uid_t c_uid
-        cdef const char *c_name = name or <const char *>NULL
+        cdef const char *c_name = <const char *>NULL
+
+        if name:
+            c_name = name.encode('utf-8')
 
         if uid:
             c_uid = <uid_t><int>uid
@@ -242,8 +245,11 @@ cdef class Context(object):
         cdef gid_t ggid
         cdef defs.group *grent
         cdef uid_t c_gid
-        cdef const char *c_name = name or <const char *>NULL
+        cdef const char *c_name = <const char *>NULL
         cdef int err
+
+        if name:
+            c_name = name.encode('utf-8')
 
         if gid:
             c_gid = <uid_t><int>gid
