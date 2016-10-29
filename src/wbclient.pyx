@@ -82,7 +82,7 @@ cdef class Context(object):
 
             ret = InterfaceDetails.__new__(InterfaceDetails)
             with nogil:
-                defs.wbcGetInterfaceDetails(&ret.details)
+                defs.wbcCtxInterfaceDetails(self.context, &ret.details)
 
             if ret.details == NULL:
                 return None
@@ -96,7 +96,7 @@ cdef class Context(object):
         c_domain = domain
         ret = DomainInfo.__new__(DomainInfo)
         with nogil:
-            defs.wbcGetDomainInfo(c_domain, &ret.dinfo)
+            defs.wbcCtxDomainInfo(self.context, c_domain, &ret.dinfo)
 
         if ret.dinfo == NULL:
             return None
@@ -159,7 +159,7 @@ cdef class Context(object):
         cdef const char **users
         cdef uint32_t num_users
 
-        defs.wbcListUsers(domain_name, &num_users, &users)
+        defs.wbcCtxListUsers(self.context, domain_name, &num_users, &users)
         for i in range(0, num_users):
             yield users[i]
 
@@ -169,7 +169,7 @@ cdef class Context(object):
         cdef const char **groups
         cdef uint32_t num_groups
 
-        defs.wbcListGroups(domain_name, &num_groups, &groups)
+        defs.wbcCtxListGroups(self.context, domain_name, &num_groups, &groups)
         for i in range(0, num_groups):
             yield groups[i]
 
