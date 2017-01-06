@@ -109,7 +109,9 @@ cdef class Context(object):
 
         user = User.__new__(User)
         sid = SID.__new__(SID)
-        defs.wbcUidToSid(pwdent.pw_uid, &sid.sid)
+        with nogil:
+            defs.wbcUidToSid(pwdent.pw_uid, &sid.sid)
+
         user.pwdent = pwdent
         user.context = self
         user.sid = sid
@@ -121,7 +123,9 @@ cdef class Context(object):
 
         group = Group.__new__(Group)
         sid = SID.__new__(SID)
-        defs.wbcGidToSid(grent.gr_gid, &sid.sid)
+        with nogil:
+            defs.wbcGidToSid(grent.gr_gid, &sid.sid)
+
         group.grent = grent
         group.context = self
         group.sid = sid
