@@ -282,6 +282,22 @@ cdef class Context(object):
 
         return self.marshal_group(grent)
 
+    def authenticate(self, username, password):
+        cdef int err
+        cdef const char *c_name
+        cdef const char *c_password
+
+        username = username.encode('utf-8')
+        c_name = username
+
+        password = password.encode('utf-8')
+        c_password = password
+
+        with nogil:
+            err = defs.wbcCtxAuthenticateUser(self.context, c_name, c_password)
+
+        return err == defs.WBC_ERR_SUCCESS
+
 
 cdef class InterfaceDetails(object):
     cdef defs.wbcInterfaceDetails *details
